@@ -1,0 +1,1 @@
+# ospos-ansible-role
