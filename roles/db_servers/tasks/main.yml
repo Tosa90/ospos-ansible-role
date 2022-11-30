@@ -1,0 +1,19 @@
+- name: install mariadb server
+  tags: db,mariadb,ubuntu
+  apt:
+    name: mariadb-server
+    state: latest
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure my.cnf
+  copy: src=./files/my.cnf
+        dest=/etc/mysql/my.cnf
+        owner=root
+        group=root
+        mode=0640
+
+- name: Add mysql-user
+  mysql_user: name=admin
+              password=pointofsale
+              priv=*.*:ALL
+              state=present
