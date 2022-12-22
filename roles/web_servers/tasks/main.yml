@@ -1,12 +1,24 @@
-- name: ensure nginx is at the latest version
+- name: Add install NGINX and PHP on Ubuntu
   apt:
-    name: nginx
-    state: latest
-    update_cache: yes
+    name:
+      - nginx
+      - php7.4-common
+      - php7.4-fpm
+      - php7.4-mbstring
+      - php7.4-xml
+      - php7.4-mysql
+      - php7.4-gd
+      - php7.4-json
+      - php7.4-cli
+      - php7.4-curl
+      - php7.4-intl
+      - php7.4-bcmath
+      - mcrypt
+    state: present
 
 - name: Sets Nginx conf file
   template:
-    src: "files/nginx.conf.j2"
+    src: "nginx.j2"
     dest: "/etc/nginx/sites-available/{{ http_conf }}"
 
 - name: Enables new site
@@ -14,19 +26,28 @@
     src: "/etc/nginx/sites-available/{{ http_conf }}"
     dest: "/etc/nginx/sites-enabled/{{ http_conf }}"
     state: link
-    notify: Reload Nginx
+  notify: Reload Nginx
   
 - name: Removes "default" site
   file:
     path: "/etc/nginx/sites-enabled/default"
     state: absent
-    notify: Reload Nginx
+  notify: Reload Nginx
 
 - name: Sets Up PHP Info Page
   template:
-    src: "files/info.php.j2"
+    src: "info.php.j2"
     dest: "/var/www/html/info.php"
 
+- name: Replace a localhost entry searching for a literal string to avoid escaping
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    search_string: '127.0.0.1'
+    line: 127.0.0.1 localhost
+    owner: root
+    group: root
+    mode: '0644'    
+    
 - name: start nginx
   service:
     name: nginx

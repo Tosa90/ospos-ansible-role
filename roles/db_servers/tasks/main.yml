@@ -2,18 +2,39 @@
   tags: db,mariadb,ubuntu
   apt:
     name: mariadb-server
-    state: latest
+    state: present
   when: ansible_distribution == "Ubuntu"
 
-- name: Configure my.cnf
-  copy: src=./files/my.cnf
-        dest=/etc/mysql/my.cnf
-        owner=root
-        group=root
-        mode=0640
+- name: Install python3-PyMySQL library
+  apt:
+    name: python3-pymysql
+    state: present
 
-- name: Add mysql-user
-  mysql_user: name=admin
-              password=pointofsale
-              priv=*.*:ALL
-              state=present
+
+- name: Create a new database with name 'ospos'
+  mysql_db:
+    name: ospos
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock  
+
+- name: Create database user 'admin'with password 'pointofsale'
+  mysql_user:
+    name: admin
+    password: pointofsale
+    priv: 'ospos.*: ALL,GRANT'
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Copy database dump file
+  copy:
+    src: ospos/database/database.sql
+    dest: /tmp
+
+- name: >
+    Import dump.sql with specific latin1 encoding,
+    similar to mysql -u <username> --default-character-set=latin1 -p <password> < dump.sql
+  mysql_db:
+    state: import
+    name: ospos
+    target: /tmp/database.sql
+    login_unix_socket: /run/mysqld/mysqld.sock
